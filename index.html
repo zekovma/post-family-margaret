@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Randomly Dispersed Images with Story Generator</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+  <style>
+    
+    @font-face {
+      font-family: 'MyCustomFont';
+      src: url('https://cdn.glitch.global/ffba5538-c11c-411b-acdd-5db4b74c32f5/mplus-1m-regular.ttf?v=1748560180992') format('truetype');
+      font-weight: normal;
+      font-style: normal;
+    }
+
+    :root {
+      --main-font: 'MyCustomFont', monospace;
+    }
+
+    body {
+      position: relative;
+      margin: 0;
+      padding: 0;
+      height: 100vh;
+      overflow: hidden;
+      background-color: #f0f0f0;
+      font-family: var(--main-font);
+    }
+
+    .image {
+      position: absolute;
+      max-width: 600px;
+      height: auto;
+      opacity: 0.8;
+      transition: transform 0.3s ease-in-out;
+      pointer-events: none;
+    }
+
+    #story {
+      position: absolute;
+      top: 200px;
+      left: 200px;
+     z-index: 12;
+      color: black;
+      padding: 10px;
+      border-radius: 0px;
+      max-width: 200px;
+      
+    }
+
+    #p5-canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 10;
+      width: 100%;
+      height: 100%;
+    }
+
+    .next-button,
+    .prev-button {
+      position: absolute;
+      bottom: 20px;
+      background-color: transparent;
+      border: none;
+      cursor: pointer;
+      display: inline-block;
+      transition: transform 0.3s;
+      z-index: 16;
+    }
+
+    .next-button {
+      right: 20px;
+    }
+
+    .prev-button {
+      left: 20px;
+    }
+
+    .next-button::after,
+    .prev-button::after {
+      content: '';
+      display: block;
+      width: 20px;
+      height: 20px;
+      border-top: 3px solid #000000;
+      border-right: 3px solid #000000;
+      margin-top: 4px;
+      z-index: 16;
+    }
+
+    .next-button::after {
+      transform: rotate(45deg); /* Right arrow */
+    }
+
+    .prev-button::after {
+      transform: rotate(-135deg); /* Left arrow */
+    }
+
+    .next-button:hover,
+    .prev-button:hover {
+      transform: translateX(5px);
+    }
+
+  </style>
+</head>
+<body>
+
+  <img src="https://cdn.glitch.global/ffba5538-c11c-411b-acdd-5db4b74c32f5/6d3861f7-913a-4a8e-9a0b-6e8fa517dc55.jpg?v=1741134734019" class="image" alt="Image 1">
+  <img src="https://cdn.glitch.global/ffba5538-c11c-411b-acdd-5db4b74c32f5/6d3861f7-913a-4a8e-9a0b-6e8fa517dc55.jpg?v=1741134734019" class="image" alt="Image 2">
+  <img src="https://cdn.glitch.global/ffba5538-c11c-411b-acdd-5db4b74c32f5/6d3861f7-913a-4a8e-9a0b-6e8fa517dc55.jpg?v=1741134734019" class="image" alt="Image 3">
+
+  <div id="story"></div>
+  <div id="p5-canvas"></div>
+
+  <script>
+    let cols, rows;
+    let spacing = 35;
+
+    function setup() {
+      let canvas = createCanvas(windowWidth, windowHeight);
+      canvas.parent('p5-canvas');
+      cols = int(width / spacing);
+      rows = int(height / spacing);
+      strokeWeight(2);
+    }
+
+    function draw() {
+     clear();  // clears the canvas each frame without a background color
+     noFill();
+
+      for (let i = 0; i < cols; i++) {
+        for (let j = 0; j < rows; j++) {
+          let x = i * spacing;
+          let y = j * spacing;
+
+          let d = dist(x, y, mouseX, mouseY);
+          let angle = d * 0.02;
+          let offsetX = cos(angle + millis() * 0.001) * 12;
+          let offsetY = sin(angle + millis() * 0.001) * 12;
+
+          let alpha = map(d, 0, width / 1.5, 255, 50);
+          stroke(0, 0, 0, alpha);
+
+          if (i < cols - 1) {
+            let nx = (i + 1) * spacing;
+            let nd = dist(nx, y, mouseX, mouseY);
+            let nOffsetX = cos(nd * 0.02 + millis() * 0.001) * 12;
+            let nOffsetY = sin(nd * 0.02 + millis() * 0.001) * 12;
+            line(x + offsetX, y + offsetY, nx + nOffsetX, y + nOffsetY);
+          }
+
+          if (j < rows - 1) {
+            let ny = (j + 1) * spacing;
+            let nd = dist(x, ny, mouseX, mouseY);
+            let nOffsetX = cos(nd * 0.02 + millis() * 0.001) * 12;
+            let nOffsetY = sin(nd * 0.02 + millis() * 0.001) * 12;
+            line(x + offsetX, y + offsetY, x + nOffsetX, ny + nOffsetY);
+          }
+        }
+      }
+    }
+
+    // Random positioning for images
+    const images = document.querySelectorAll('.image');
+    function randomPosition() {
+      images.forEach(image => {
+        const randomX = Math.random() * window.innerWidth;
+        const randomY = Math.random() * window.innerHeight;
+        image.style.left = `${randomX}px`;
+        image.style.top = `${randomY}px`;
+      });
+    }
+
+    window.onload = () => {
+      randomPosition();
+      generateRandomStory();
+    };
+
+    images.forEach(image => {
+      image.addEventListener('mouseover', () => {
+        image.style.transform = 'scale(1.1)';
+      });
+      image.addEventListener('mouseout', () => {
+        image.style.transform = 'scale(1)';
+      });
+    });
+
+    function generateRandomStory() {
+      const storyTexts = [
+        "They crossed the street and for a moment, our eyes met in complete silence. It was brief, but it felt like a conversation.",
+        "She liked to walk in the night, she was looking for silence in the space, and in those moments, something in her would shift. She would become present.",
+        "It was the summer of 1973 when this photograph was taken. They say the person in it has long since disappeared, but her dreams are still alive, misplaced among other people she got to know.",
+        "She whispered secrets to the mannequins in her apartment, convinced they were past lovers trapped in plastic. One morning, she woke up to find them rearranged—arms reaching, heads turned toward her, as if they had been moving in the night. The next day, she disappeared, leaving only a single mannequin in her place, dressed in her clothes, staring at the door.",
+        "There was something about the way they smiled. I couldn't put my finger on it, but it felt like they were hiding something, a secret they would never share."
+      ];
+      const randomStory = storyTexts[Math.floor(Math.random() * storyTexts.length)];
+      document.getElementById('story').textContent = randomStory;
+    }
+  </script>
+
+  <a href="https://post-family-filip.glitch.me/">
+    <button class="next-button"></button>
+  </a>
+
+  <a href="https://family-album.glitch.me/">
+    <button class="prev-button"></button>
+  </a>
+
+</body>
+</html>
